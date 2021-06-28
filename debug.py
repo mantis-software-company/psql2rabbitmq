@@ -14,23 +14,22 @@ if __name__ == "__main__":
     )
 
     config = {
-            "mq_host": 'rabbit.e-bus.svc.cluster.mantam',
+            "mq_host": 'rabbit-address',
             "mq_port": '5672',
-            "mq_vhost": 'test',
-            "mq_user": 'test',
-            "mq_pass": 'test',
-            "mq_exchange": 'umittest',
-            "mq_routing_key": 'umittest',
-            "db_host": 'trddb-20210111.trdizin.svc.cluster.mantam',
+            "mq_vhost": 'your-vhost',
+            "mq_user": 'your-username',
+            "mq_pass": 'your-password',
+            "mq_exchange": 'your-exchange',
+            "mq_routing_key": 'your-routing-key',
+            "db_host": 'your-db-hot',
             "db_port": '5432',
-            "db_user": 'trdizin',
-            "db_pass": 'trdizin',
-            "db_database": 'trdizinv4',
+            "db_user": 'your-db-username',
+            "db_pass": 'your-db-password',
+            "db_database": 'your-db',
             "consumer_pool_size": "10",
-            #"sql_query": 'Select * From  journal j Order By j.journal_id',
-            "sql_query": 'Select * From  paper p Order By p.paper_id',
+            "sql_query": 'Select * From  your_table yt Order By yt.id',
             "sql_fetch_size": '500',
-            "data_template_file_path": '/home/uyilmaz/Desktop/psql2rabbitmq-as-json/data-template.tpl'
+            "data_template_file_path": '/your-path/data-template.tpl'
         }
 
     logger.addHandler(handler)
