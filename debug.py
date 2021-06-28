@@ -21,7 +21,7 @@ if __name__ == "__main__":
             "mq_pass": 'your-password',
             "mq_exchange": 'your-exchange',
             "mq_routing_key": 'your-routing-key',
-            "db_host": 'your-db-hot',
+            "db_host": 'your-db-host',
             "db_port": '5432',
             "db_user": 'your-db-username',
             "db_pass": 'your-db-password',
