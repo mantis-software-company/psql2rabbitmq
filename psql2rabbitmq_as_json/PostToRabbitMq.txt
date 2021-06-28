@@ -1,0 +1,9 @@
+http://webmail.mantis.com.tr/
+http://redmine.mantam.com.tr/
+http://gitlab.mantam.com.tr/tools
+
+
+
+1-	Sql template olarak verilen sorgu ile postgresqlden verileri al
+2-	Gelen verileri Apache-Velosity ile convert et
+3-	Convert işleminden sonra oluşan verileri RabbitMq ya gönder
