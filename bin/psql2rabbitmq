@@ -3,9 +3,9 @@
 import os
 import logging
 import asyncio
-from psql2rabbitmq_as_json import perform_task
+from psql2rabbitmq import perform_task
 
-logger = logging.getLogger("psql2rabbitmq-as-json")
+logger = logging.getLogger("psql2rabbitmq")
 logger.setLevel(os.environ.get('LOG_LEVEL', "DEBUG"))
 handler = logging.StreamHandler()
 handler.setFormatter(

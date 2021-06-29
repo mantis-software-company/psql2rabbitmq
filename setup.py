@@ -1,15 +1,15 @@
 import setuptools
 
 setuptools.setup(
-    name="psql2rabbitmq-as-json",
+    name="psql2rabbitmq",
     version="0.0.0",
     author="Umit YILMAZ",
-    author_email="info@mantis.com.tr",
+    author_email="umutyilmaz44@gmail.com",
     description="Asynchronous PostgreSQL data read and publish to RabbitMQ library",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     platforms="all",
-    url="https://github.com/mantis-software-company/psql2rabbitmq-as-json",
+    url="https://github.com/mantis-software-company/psql2rabbitmq",
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
         "Topic :: Internet",
@@ -26,7 +26,7 @@ setuptools.setup(
     ],
     install_requires=['aiopg', 'aio_pika', 'jinja2', 'psycopg2'],
     python_requires=">3.6.*, <4",
-    packages=['psql2rabbitmq_as_json'],
-    scripts=['bin/psql2rabbitmq-as-json']
+    packages=['psql2rabbitmq'],
+    scripts=['bin/psql2rabbitmq']
 )
 

@@ -1,21 +1,21 @@
-# psql2rabbitmq-as-json
+# psql2rabbitmq
 
-psql2rabbitmq-as-json is a library that asynchronously forwards postgresql data to the RabbitMQ message queue in the requested template. Using the library, the parametrically given query is run, and the data obtained is converted into the format specified as a template and forwarded to the message queue.
+psql2rabbitmq is a library that asynchronously forwards postgresql data to the RabbitMQ message queue in the requested template. Using the library, the parametrically given query is run, and the data obtained is converted into the format specified as a template and forwarded to the message queue.
 
 ## Installation
 
 You can install this library easily with pip.
-`pip install psql2rabbitmq-as-json` 
+`pip install psql2rabbitmq` 
 
 ## Usage
 ### As a library
 ```py
 import os
 import asyncio
-from psql2rabbitmq_as_json import perform_task
+from psql2rabbitmq import perform_task
 
 if __name__ == '__main__':
-    logger = logging.getLogger("psql2rabbitmq-as-json")
+    logger = logging.getLogger("psql2rabbitmq")
     logger.setLevel(os.environ.get('LOG_LEVEL', "DEBUG"))
     handler = logging.StreamHandler()
     handler.setFormatter(
@@ -27,20 +27,18 @@ if __name__ == '__main__':
 
     config = {
       "mq_host": os.environ.get('MQ_HOST'),
-	    "mq_port": int(os.environ.get('MQ_PORT')), 
+	    "mq_port": int(os.environ.get('MQ_PORT', '5672')), 
 	    "mq_vhost": os.environ.get('MQ_VHOST'),
 	    "mq_user": os.environ.get('MQ_USER'),
 	    "mq_pass": os.environ.get('MQ_PASS'),
-	    "mq_exchange": os.environ.get('MQ_EXCHANGE'),
-      "mq_routing_key": os.environ.get('MQ_ROUTING_KEY'),
+	    "mq_exchange": os.environ.get('MQ_EXCHANGE', 'psql2rabbitmq'),
+      "mq_routing_key": os.environ.get('MQ_ROUTING_KEY', 'psql2rabbitmq'),
 	    "db_host": os.environ.get('DB_HOST'),
-	    "db_port": int(os.environ.get('DB_PORT')),
+	    "db_port": int(os.environ.get('DB_PORT', '5432')),
 	    "db_user": os.environ.get('DB_USER'),
 	    "db_pass": os.environ.get('DB_PASS'),
 	    "db_database": os.environ.get('DB_DATABASE'),
-      "consumer_pool_size": os.environ.get('CONSUMER_POOL_SIZE'),
       "sql_query": os.environ.get('SQL_QUERY'),
-      "sql_fetch_size": os.environ.get('SQL_FETCH_SIZE'),
       "data_template_file_path": os.environ.get('DATA_TEMPLATE_FILE_PATH') 
     }
   
@@ -52,17 +50,19 @@ if __name__ == '__main__':
           loop=loop,
           consumer_pool_size=10,
           sql_query=sql_query,
-          config=config
+          config=config,
+          consumer_pool_size=10, 
+          sql_fetch_size=1000
         )
     )
 
 loop.close()
 ```
 
-This library uses [aio_pika](https://aio-pika.readthedocs.io/en/latest/), [aiopg](https://aiopg.readthedocs.io/en/stable/) and [jinja2](https://jinja2docs.readthedocs.io/en/stable/)packages.
+This library uses [aio_pika](https://aio-pika.readthedocs.io/en/latest/), [aiopg](https://aiopg.readthedocs.io/en/stable/), [jinja2](https://jinja2docs.readthedocs.io/en/stable/) and [psycopg2](https://www.psycopg.org/docs//) packages.
 
 ### Standalone
-You can also call this library as standalone job command.  Just set required environment variables and run `psql2rabbitmq-as-json`. This usecase perfectly fits when you need run it on cronjobs or kubernetes jobs. 
+You can also call this library as standalone job command.  Just set required environment variables and run `psql2rabbitmq`. This usecase perfectly fits when you need run it on cronjobs or kubernetes jobs. 
 
 **Required environment variables:**
 - MQ_HOST
@@ -80,6 +80,7 @@ You can also call this library as standalone job command.  Just set required env
 - SQL_QUERY (DB Select query. Ex: `Select * From your_table Where id > %s;`)
 - DATA_TEMPLATE_FILE_PATH (File path contain reqested data template. Ex: `/usr/home/your_data_template_file`)
 - CONSUMER_POOL_SIZE (optional, default value: 10)
+- SQL_FETCH_SIZE (optional, default value: 1000)
 - LOG_LEVEL (Logging level. See: [Python logging module docs](https://docs.python.org/3/library/logging.html#logging-levels))
 
 **Example Kubernetes job:** 

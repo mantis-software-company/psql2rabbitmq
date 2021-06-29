@@ -1,10 +1,10 @@
 import os
 import asyncio
 import logging
-from psql2rabbitmq_as_json import perform_task
+from psql2rabbitmq import perform_task
 
 if __name__ == "__main__":
-    logger = logging.getLogger("psql2rabbitmq-as-json")
+    logger = logging.getLogger("psql2rabbitmq")
     logger.setLevel(os.environ.get('LOG_LEVEL', "DEBUG"))
     handler = logging.StreamHandler()
     handler.setFormatter(
@@ -26,9 +26,7 @@ if __name__ == "__main__":
             "db_user": 'your-db-username',
             "db_pass": 'your-db-password',
             "db_database": 'your-db',
-            "consumer_pool_size": "10",
             "sql_query": 'Select * From  your_table yt Order By yt.id',
-            "sql_fetch_size": '500',
             "data_template_file_path": '/your-path/data-template.tpl'
         }
 
