@@ -1,6 +1,6 @@
 {
- "columnId": {{journal_id}},
- "columnContent": {{application_date}},
- "columnStatus": {{citation_count}},
+ "columnId": {{id}},
+ "columnContent": {{date}},
+ "columnStatus": {{count}},
  "mutualX": "Hi"
 }
