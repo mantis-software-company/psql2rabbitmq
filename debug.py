@@ -32,5 +32,7 @@ if __name__ == "__main__":
 
     logger.addHandler(handler)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(perform_task(loop=loop, logger=logger, config=config))
-    loop.close()
+    try:
+        loop.run_until_complete(perform_task(loop=loop, logger=logger, config=config))
+    finally:
+        loop.close()
