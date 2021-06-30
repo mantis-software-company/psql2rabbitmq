@@ -45,7 +45,8 @@ if __name__ == '__main__':
     sql_query = """Select * From your_table Where id>100 Order By id > %s;""" 
     data_template_file_path = """/usr/home/your_data_template_file""" 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(
+    try:
+      loop.run_until_complete(
         perform_task(
           loop=loop,
           consumer_pool_size=10,
@@ -54,9 +55,9 @@ if __name__ == '__main__':
           consumer_pool_size=10, 
           sql_fetch_size=1000
         )
-    )
-
-loop.close()
+      )
+    finally:
+      loop.close()
 ```
 
 This library uses [aio_pika](https://aio-pika.readthedocs.io/en/latest/), [aiopg](https://aiopg.readthedocs.io/en/stable/), [jinja2](https://jinja2docs.readthedocs.io/en/stable/) and [psycopg2](https://www.psycopg.org/docs//) packages.
