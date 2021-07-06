@@ -28,7 +28,9 @@ async def perform_task(loop, sql_query=None, data_template_file_path=None, logge
             "db_pass": os.environ.get('DB_PASS'),
             "db_database": os.environ.get('DB_DATABASE'),
             "sql_query": os.environ.get('SQL_QUERY'),
-            "data_template_file_path": os.environ.get('DATA_TEMPLATE_FILE_PATH')
+            "data_template_file_path": os.environ.get('DATA_TEMPLATE_FILE_PATH'),
+            "consumer_pool_size": os.environ.get('CONSUMER_POOL_SIZE'),
+            "sql_fetch_size": os.environ.get('SQL_FETCH_SIZE')
         }
 
     # The sql_query is checked, if it is not sent parametrically, it is taken from the configuration.
@@ -62,6 +64,24 @@ async def perform_task(loop, sql_query=None, data_template_file_path=None, logge
         if logger:
             logger.error("Invalid mq_exchange!")                
         return
+
+    # The consumer_pool_size is checked, if it is exist in the configuration than overriding value from the configuration.
+    if "consumer_pool_size" in config:
+        try:
+            pool_size = int(config.get("consumer_pool_size"))
+            consumer_pool_size = pool_size
+        except Exception as e:
+            if logger:
+                logger.error("CONSUMER_POOL_SIZE in config is not available: {} -> {}".format(config.get("consumer_pool_size"), e))
+    
+    # The consumer_pool_size is checked, if it is exist in the configuration than overriding value from the configuration.
+    if "sql_fetch_size" in config:
+        try:
+            fetch_size = int(config.get("sql_fetch_size"))
+            sql_fetch_size = fetch_size
+        except Exception as e:
+            if logger:
+                logger.error("SQL_FETCH_SIZE in config is not available: {} -> {}".format(config.get("sql_fetch_size"), e))
 
     # Reading the file content in the directory given with data_template_file_path.
     data_template_file = open(data_template_file_path, "r")
@@ -128,7 +148,7 @@ async def perform_task(loop, sql_query=None, data_template_file_path=None, logge
                                     await exchange.publish(aio_pika.Message(rendered_data.encode("utf-8")), routing_key= mq_routing_key,)                        
                                 except Exception as e:
                                     if logger:
-                                        logger.error("Row Send Error: {} -> {}}".format(rendered_data, e))
+                                        logger.error("Row Send Error: {} -> {}".format(rendered_data, e))
                             
                             if logger:
                                     logger.debug(f"Method-{methodId} => row_count: {cursor.rowcount}")
