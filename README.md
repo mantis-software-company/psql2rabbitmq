@@ -39,10 +39,12 @@ if __name__ == '__main__':
 	    "db_pass": os.environ.get('DB_PASS'),
 	    "db_database": os.environ.get('DB_DATABASE'),
       "sql_query": os.environ.get('SQL_QUERY'),
-      "data_template_file_path": os.environ.get('DATA_TEMPLATE_FILE_PATH') 
+      "data_template_file_path": os.environ.get('DATA_TEMPLATE_FILE_PATH'),
+      "consumer_pool_size": os.environ.get('CONSUMER_POOL_SIZE'),
+      "sql_fetch_size": os.environ.get('SQL_FETCH_SIZE') 
     }
   
-    sql_query = """Select * From your_table Where id>100 Order By id > %s;""" 
+    sql_query = """Select * From your_table Where id>100 Order By id;""" 
     data_template_file_path = """/usr/home/your_data_template_file""" 
     loop = asyncio.get_event_loop()
     try:
