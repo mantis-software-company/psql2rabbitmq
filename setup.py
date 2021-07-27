@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="psql2rabbitmq",
-    version="1.0.1-a",
+    version="1.0.1b",
     author="Umit YILMAZ",
     author_email="umutyilmaz44@gmail.com",
     description="Asynchronous PostgreSQL data read and publish to RabbitMQ library",
@@ -24,7 +24,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8"
     ],
-    install_requires=['aiopg', 'aio_pika', 'jinja2', 'psycopg2'],
+    install_requires=['aiopg', 'aio_pika', 'jinja2', 'psycopg2-binary'],
     python_requires=">3.6.*, <4",
     packages=['psql2rabbitmq'],
     scripts=['bin/psql2rabbitmq']
