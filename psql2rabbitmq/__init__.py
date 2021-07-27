@@ -135,14 +135,24 @@ async def perform_task(loop, sql_query=None, data_template_file_path=None, logge
                             local_offset = sql_query_offset
                             sql_query_offset += sql_fetch_size
                             
-                            if logger:
-                                logger.debug(f"Method-{methodId} => " + sql_query + f" offset {local_offset} limit {sql_fetch_size}")
+                            if "{{offset}}" in sql_query:
+                                sql_query_full = sql_query.replace("{{offset}}", str(local_offset))
+                            else:
+                                sql_query_full = sql_query + f" offset {local_offset}"
 
-                            await cursor.execute(sql_query + f" offset {local_offset} limit {sql_fetch_size}")
+                            if "{{limit}}" in sql_query_full:
+                                sql_query_full = sql_query_full.replace("{{limit}}", str(sql_fetch_size))
+                            else:
+                                sql_query_full = sql_query_full + f" limit {sql_fetch_size}"
+
+                            if logger:
+                                logger.debug(f"Method-{methodId} => " + sql_query_full)
+
+                            await cursor.execute(sql_query_full)
                             async for row in cursor:  
                                 try:                  
                                     # The fetched row is rendered and the resulting value is transferred to rendered_data.
-                                    rendered_data = await template.render_async(row)                        
+                                    rendered_data = await template.render_async(row)
                                     
                                     # Sending rendered_data to RabbitMq
                                     await exchange.publish(aio_pika.Message(rendered_data.encode("utf-8")), routing_key= mq_routing_key,)                        
