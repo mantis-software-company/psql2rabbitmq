@@ -10,7 +10,7 @@ from aio_pika.pool import Pool
 import logging
 
 # The method that will run the relevant query from the db and send it to the Message Queue, the necessary information is transferred via parametric and os environment.
-async def perform_task(loop, sql_query=None, data_template_file_path=None, logger=None, config=None, consumer_pool_size=10, sql_fetch_size=1000):
+async def perform_task(loop, sql_file_path=None, data_template_file_path=None, logger=None, config=None, consumer_pool_size=10, sql_fetch_size=1000):
 
     # Configuration information is checked, if it is not sent parametrically, it is retrieved from within the os environment.
     if config is None:
@@ -27,7 +27,7 @@ async def perform_task(loop, sql_query=None, data_template_file_path=None, logge
             "db_user": os.environ.get('DB_USER'),
             "db_pass": os.environ.get('DB_PASS'),
             "db_database": os.environ.get('DB_DATABASE'),
-            "sql_query": os.environ.get('SQL_QUERY'),
+            "sql_file_path": os.environ.get('SQL_FILE_PATH'),
             "data_template_file_path": os.environ.get('DATA_TEMPLATE_FILE_PATH'),
             "consumer_pool_size": os.environ.get('CONSUMER_POOL_SIZE'),
             "sql_fetch_size": os.environ.get('SQL_FETCH_SIZE')
@@ -35,20 +35,21 @@ async def perform_task(loop, sql_query=None, data_template_file_path=None, logge
     
     logger.debug("Config:")
     logger.debug(config)
-
-    # The sql_query is checked, if it is not sent parametrically, it is taken from the configuration.
-    if not sql_query and "sql_query" in config:
-        sql_query = config.get("sql_query")  
-        logger.debug(f"sql_query setted with : {sql_query}")  
-    if not sql_query:
+    
+    sql_query = None
+    # The data_template_file_path is checked, if it is not sent parametrically, it is taken from the configuration.
+    if not sql_file_path and "sql_file_path" in config:
+        sql_file_path = config.get("sql_file_path") 
+        logger.debug(f"{'sql_file_path':<23} setted with : {sql_file_path}")     
+    if not sql_file_path:
         if logger:
-            logger.error("Invalid sql_query!")                
+            logger.error("Invalid sql_file_path!")                
         return
     
     # The data_template_file_path is checked, if it is not sent parametrically, it is taken from the configuration.
     if not data_template_file_path and "data_template_file_path" in config:
         data_template_file_path = config.get("data_template_file_path") 
-        logger.debug(f"data_template_file_path setted with : {data_template_file_path}")     
+        logger.debug(f"{'data_template_file_path':<23} setted with : {data_template_file_path}")     
     if not data_template_file_path:
         if logger:
             logger.error("Invalid data_template_file_path!")                
@@ -57,7 +58,7 @@ async def perform_task(loop, sql_query=None, data_template_file_path=None, logge
     # The routing_key is checked, if it is not sent parametrically, it is taken from the configuration.
     if "mq_routing_key" in config:                    
         mq_routing_key = str(config.get("mq_routing_key"))
-        logger.debug(f"mq_routing_key setted with : {mq_routing_key}")     
+        logger.debug(f"{'mq_routing_key':<23} setted with : {mq_routing_key}")     
     if not mq_routing_key:
         if logger:
             logger.error("Invalid mq_routing_key!")                
@@ -66,7 +67,7 @@ async def perform_task(loop, sql_query=None, data_template_file_path=None, logge
     # The mq_exchange is checked, if it is not sent parametrically, it is taken from the configuration.
     if "mq_exchange" in config:
         mq_exchange = str(config.get("mq_exchange"))
-        logger.debug(f"mq_exchange setted with : {mq_exchange}")     
+        logger.debug(f"{'mq_exchange':<23} setted with : {mq_exchange}")     
     if not mq_exchange:
         if logger:
             logger.error("Invalid mq_exchange!")                
@@ -77,7 +78,7 @@ async def perform_task(loop, sql_query=None, data_template_file_path=None, logge
         try:
             pool_size = int(config.get("consumer_pool_size"))
             consumer_pool_size = pool_size
-            logger.debug(f"consumer_pool_size setted with : {consumer_pool_size}")     
+            logger.debug(f"{'consumer_pool_size':<23} setted with : {consumer_pool_size}")     
         except Exception as e:
             if logger:
                 logger.error("CONSUMER_POOL_SIZE in config is not available: {} -> {}".format(config.get("consumer_pool_size"), e))
@@ -87,10 +88,17 @@ async def perform_task(loop, sql_query=None, data_template_file_path=None, logge
         try:
             fetch_size = int(config.get("sql_fetch_size"))
             sql_fetch_size = fetch_size
-            logger.debug(f"sql_fetch_size setted with : {sql_fetch_size}")     
+            logger.debug(f"{'sql_fetch_size':<23} setted with : {sql_fetch_size}")     
         except Exception as e:
             if logger:
                 logger.error("SQL_FETCH_SIZE in config is not available: {} -> {}".format(config.get("sql_fetch_size"), e))
+
+    # Reading the file content in the directory given with sql_file_path.
+    sql_file = open(sql_file_path, "r")
+    sql_query = sql_file.read()
+    
+    logger.debug("sql_query:")   
+    logger.debug(sql_query)   
 
     # Reading the file content in the directory given with data_template_file_path.
     data_template_file = open(data_template_file_path, "r")
@@ -102,18 +110,18 @@ async def perform_task(loop, sql_query=None, data_template_file_path=None, logge
     db_database = config.get("db_database")
     db_port = config.get("db_port")
 
-    logger.debug(f"db_host setted with : {db_host}")     
-    logger.debug(f"db_user setted with : {db_user}")     
-    logger.debug(f"db_pass setted with : {db_pass}")     
-    logger.debug(f"db_database setted with : {db_database}")     
-    logger.debug(f"db_port setted with : {db_port}")     
+    logger.debug(f"{'db_host':<12} setted with : {db_host}")     
+    logger.debug(f"{'db_user':<12} setted with : {db_user}")     
+    logger.debug(f"{'db_pass':<12} setted with : {db_pass}")     
+    logger.debug(f"{'db_database':<12} setted with : {db_database}")     
+    logger.debug(f"{'db_port':<12} setted with : {db_port}")     
 
     db_pool = await aiopg.create_pool(
-        host=config.get("db_host"),
-        user=config.get("db_user"),
-        password=config.get("db_pass"),
-        database=config.get("db_database"),
-        port=config.get("db_port"),
+        host=db_host,
+        user=db_user,
+        password=db_pass,
+        database=db_database,
+        port=db_port,
         minsize=consumer_pool_size,
         maxsize=consumer_pool_size * 2
     )
@@ -167,7 +175,7 @@ async def perform_task(loop, sql_query=None, data_template_file_path=None, logge
                                 sql_query_full = sql_query_full + f" limit {sql_fetch_size}"
 
                             if logger:
-                                logger.debug(f"Method-{methodId} => " + sql_query_full)
+                                logger.debug(f"Method-{methodId} => offset: {local_offset} limit: {sql_fetch_size}")
 
                             await cursor.execute(sql_query_full)
                             async for row in cursor:  

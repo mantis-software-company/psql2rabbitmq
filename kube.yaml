@@ -66,8 +66,8 @@ spec:
                 value: "<DBPASS>"
               - name: DB_DATABASE
                 value: <DB>
-              - name: SQL_QUERY 
-                value: "Select * From yourtable Order By Id"
+              - name: SQL_FILE_PATH 
+                value: "./your-sql-file.sql"
               - name: DATA_TEMPLATE_FILE_PATH 
                 value: "./your-template-file.tmp"
               - name: CONSUMER_POOL_SIZE 

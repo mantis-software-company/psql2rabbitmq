@@ -38,13 +38,13 @@ if __name__ == '__main__':
 	    "db_user": os.environ.get('DB_USER'),
 	    "db_pass": os.environ.get('DB_PASS'),
 	    "db_database": os.environ.get('DB_DATABASE'),
-      "sql_query": os.environ.get('SQL_QUERY'),
+      "sql_file_path": os.environ.get('SQL_FILE_PATH'),
       "data_template_file_path": os.environ.get('DATA_TEMPLATE_FILE_PATH'),
       "consumer_pool_size": os.environ.get('CONSUMER_POOL_SIZE'),
       "sql_fetch_size": os.environ.get('SQL_FETCH_SIZE') 
     }
   
-    sql_query = """Select * From your_table Where id>100 Order By id;""" 
+    sql_file_path = """/usr/home/your_sql_file"""
     data_template_file_path = """/usr/home/your_data_template_file""" 
     loop = asyncio.get_event_loop()
     try:
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         perform_task(
           loop=loop,
           consumer_pool_size=10,
-          sql_query=sql_query,
+          sql_file_path=sql_file_path,
           config=config,
           consumer_pool_size=10, 
           sql_fetch_size=1000
@@ -80,7 +80,7 @@ You can also call this library as standalone job command.  Just set required env
 - DB_USER
 - DB_PASS
 - DB_DATABASE
-- SQL_QUERY (DB Select query. Ex: `Select * From your_table Where id > %s;`)
+- SQL_FILE_PATH (File path contain sql query. Ex: `/usr/home/your_sql_file`)
 - DATA_TEMPLATE_FILE_PATH (File path contain reqested data template. Ex: `/usr/home/your_data_template_file`)
 - CONSUMER_POOL_SIZE (optional, default value: 10)
 - SQL_FETCH_SIZE (optional, default value: 1000)
