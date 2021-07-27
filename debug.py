@@ -26,8 +26,10 @@ if __name__ == "__main__":
             "db_user": 'your-db-username',
             "db_pass": 'your-db-password',
             "db_database": 'your-db',
-            "sql_query": 'Select * From  your_table yt Order By yt.id',
-            "data_template_file_path": '/your-path/data-template.tpl'
+            "sql_file_path": '/your-path/your-sql-query-file',
+            "data_template_file_path": '/your-path/your-data-template-file',
+            "consumer_pool_size": 1,
+            "sql_fetch_size":10
         }
 
     logger.addHandler(handler)
