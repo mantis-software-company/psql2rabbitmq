@@ -40,7 +40,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
     # The data_template_file_path is checked, if it is not sent parametrically, it is taken from the configuration.
     if not sql_file_path and "sql_file_path" in config:
         sql_file_path = config.get("sql_file_path") 
-        logger.debug(f"{'sql_file_path':<23} setted with : {sql_file_path}")     
+        logger.debug(f"{'sql_file_path':<23} assigned to : {sql_file_path}")     
     if not sql_file_path:
         if logger:
             logger.error("Invalid sql_file_path!")                
@@ -49,7 +49,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
     # The data_template_file_path is checked, if it is not sent parametrically, it is taken from the configuration.
     if not data_template_file_path and "data_template_file_path" in config:
         data_template_file_path = config.get("data_template_file_path") 
-        logger.debug(f"{'data_template_file_path':<23} setted with : {data_template_file_path}")     
+        logger.debug(f"{'data_template_file_path':<23} assigned to : {data_template_file_path}")     
     if not data_template_file_path:
         if logger:
             logger.error("Invalid data_template_file_path!")                
@@ -58,7 +58,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
     # The routing_key is checked, if it is not sent parametrically, it is taken from the configuration.
     if "mq_routing_key" in config:                    
         mq_routing_key = str(config.get("mq_routing_key"))
-        logger.debug(f"{'mq_routing_key':<23} setted with : {mq_routing_key}")     
+        logger.debug(f"{'mq_routing_key':<23} assigned to : {mq_routing_key}")     
     if not mq_routing_key:
         if logger:
             logger.error("Invalid mq_routing_key!")                
@@ -67,7 +67,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
     # The mq_exchange is checked, if it is not sent parametrically, it is taken from the configuration.
     if "mq_exchange" in config:
         mq_exchange = str(config.get("mq_exchange"))
-        logger.debug(f"{'mq_exchange':<23} setted with : {mq_exchange}")     
+        logger.debug(f"{'mq_exchange':<23} assigned to : {mq_exchange}")     
     if not mq_exchange:
         if logger:
             logger.error("Invalid mq_exchange!")                
@@ -78,7 +78,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
         try:
             pool_size = int(config.get("consumer_pool_size"))
             consumer_pool_size = pool_size
-            logger.debug(f"{'consumer_pool_size':<23} setted with : {consumer_pool_size}")     
+            logger.debug(f"{'consumer_pool_size':<23} assigned to : {consumer_pool_size}")     
         except Exception as e:
             if logger:
                 logger.error("CONSUMER_POOL_SIZE in config is not available: {} -> {}".format(config.get("consumer_pool_size"), e))
@@ -88,7 +88,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
         try:
             fetch_size = int(config.get("sql_fetch_size"))
             sql_fetch_size = fetch_size
-            logger.debug(f"{'sql_fetch_size':<23} setted with : {sql_fetch_size}")     
+            logger.debug(f"{'sql_fetch_size':<23} assigned to : {sql_fetch_size}")     
         except Exception as e:
             if logger:
                 logger.error("SQL_FETCH_SIZE in config is not available: {} -> {}".format(config.get("sql_fetch_size"), e))
@@ -110,11 +110,11 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
     db_database = config.get("db_database")
     db_port = config.get("db_port")
 
-    logger.debug(f"{'db_host':<12} setted with : {db_host}")     
-    logger.debug(f"{'db_user':<12} setted with : {db_user}")     
-    logger.debug(f"{'db_pass':<12} setted with : {db_pass}")     
-    logger.debug(f"{'db_database':<12} setted with : {db_database}")     
-    logger.debug(f"{'db_port':<12} setted with : {db_port}")     
+    logger.debug(f"{'db_host':<12} assigned to : {db_host}")     
+    logger.debug(f"{'db_user':<12} assigned to : {db_user}")     
+    logger.debug(f"{'db_pass':<12} assigned to : {db_pass}")     
+    logger.debug(f"{'db_database':<12} assigned to : {db_database}")     
+    logger.debug(f"{'db_port':<12} assigned to : {db_port}")     
 
     db_pool = await aiopg.create_pool(
         host=db_host,
