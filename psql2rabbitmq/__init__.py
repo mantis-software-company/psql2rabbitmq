@@ -117,16 +117,17 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
     logger.debug(f"{'db_database':<12} assigned to : {db_database}")     
     logger.debug(f"{'db_port':<12} assigned to : {db_port}")     
 
-    db_pool = await aiopg.create_pool(
-        host=db_host,
-        user=db_user,
-        password=db_pass,
-        database=db_database,
-        port=db_port,
-        connect_timeout=10,
-        minsize=consumer_pool_size,
-        maxsize=consumer_pool_size * 2
-    )
+    # db_pool = await aiopg.create_pool(
+    #     host=db_host,
+    #     user=db_user,
+    #     password=db_pass,
+    #     database=db_database,
+    #     port=db_port,
+    #     connect_timeout=130,
+    #     minsize=consumer_pool_size,
+    #     maxsize=consumer_pool_size * 2,
+    #     timeout=100000
+    # )
 
     async def get_rabbitmq_channel():
         async with rabbitmq_connection_pool.acquire() as connection:
@@ -152,36 +153,42 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
     async def fetch_db_data(methodId):
 
         nonlocal sql_query_offset
-        template = Template(data_template, enable_async=True)   
+        template = Template(data_template, enable_async=True) 
         
-        async with db_pool.acquire() as db_conn:
-            async with db_conn.cursor(cursor_factory= psycopg2.extras.RealDictCursor) as cursor:
-                async with rabbitmq_channel_pool.acquire() as channel:
+        # async with db_pool.acquire() as db_conn:
+        #     async with db_conn.cursor(cursor_factory= psycopg2.extras.RealDictCursor) as cursor:
+        async with rabbitmq_channel_pool.acquire() as channel:
                     
-                    exchange = await channel.get_exchange(mq_exchange)
-        
-                    while True:
-                        try:    
-                            # Retrieving data from database
-                            local_offset = sql_query_offset
-                            sql_query_offset += sql_fetch_size
-                            
-                            if "{{offset}}" in sql_query:
-                                sql_query_full = sql_query.replace("{{offset}}", str(local_offset))
-                            else:
-                                sql_query_full = sql_query + f" offset {local_offset}"
+            exchange = await channel.get_exchange(mq_exchange)
 
-                            if "{{limit}}" in sql_query_full:
-                                sql_query_full = sql_query_full.replace("{{limit}}", str(sql_fetch_size))
-                            else:
-                                sql_query_full = sql_query_full + f" limit {sql_fetch_size}"
+            while True:
+                try:                       
+                    # Retrieving data from database
+                    local_offset = sql_query_offset
+                    sql_query_offset += sql_fetch_size
+                    
+                    if "{{offset}}" in sql_query:
+                        sql_query_full = sql_query.replace("{{offset}}", str(local_offset))
+                    else:
+                        sql_query_full = sql_query + f" offset {local_offset}"
 
-                            if logger:
-                                logger.debug(f"Method-{methodId} => offset: {local_offset} limit: {sql_fetch_size}")
-                            
+                    if "{{limit}}" in sql_query_full:
+                        sql_query_full = sql_query_full.replace("{{limit}}", str(sql_fetch_size))
+                    else:
+                        sql_query_full = sql_query_full + f" limit {sql_fetch_size}"
+
+                    if logger:
+                        logger.debug(f"Method-{methodId} => offset: {local_offset} limit: {sql_fetch_size}")
+                    
+                    dsn = "host=%s user=%s password=%s dbname=%s port=%s" % (db_host, db_user, db_pass, db_database, db_port)
+                    async with aiopg.connect(dsn=dsn, timeout=1200) as db_conn:
+                        async with db_conn.cursor(cursor_factory= psycopg2.extras.RealDictCursor) as cursor:
+
                             await cursor.execute(sql_query_full)
+                            response = await cursor.fetchall()
+
                             try:
-                                async for row in cursor:  
+                                for row in response:  
                                     try:                  
                                         # The fetched row is rendered and the resulting value is transferred to rendered_data.
                                         rendered_data = await template.render_async(row, json=json)
@@ -203,11 +210,11 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
                                 if logger:
                                     logger.info(f"Method-{methodId} has finished.")
                                 break    
-                
-                        except Exception as e:
-                            if logger:
-                                logger.error("Error: %s" % (e,))
-                            break
+        
+                except Exception as e:
+                    if logger:
+                        raise e
+                    break
                 
     async with rabbitmq_connection_pool, rabbitmq_channel_pool:
         consumer_pool = []
