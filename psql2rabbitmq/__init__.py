@@ -116,19 +116,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
     logger.debug(f"{'db_pass':<12} assigned to : {db_pass}")     
     logger.debug(f"{'db_database':<12} assigned to : {db_database}")     
     logger.debug(f"{'db_port':<12} assigned to : {db_port}")     
-
-    # db_pool = await aiopg.create_pool(
-    #     host=db_host,
-    #     user=db_user,
-    #     password=db_pass,
-    #     database=db_database,
-    #     port=db_port,
-    #     connect_timeout=130,
-    #     minsize=consumer_pool_size,
-    #     maxsize=consumer_pool_size * 2,
-    #     timeout=100000
-    # )
-
+    
     async def get_rabbitmq_channel():
         async with rabbitmq_connection_pool.acquire() as connection:
             return await connection.channel()
