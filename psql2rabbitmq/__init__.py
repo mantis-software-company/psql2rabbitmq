@@ -9,6 +9,7 @@ from jinja2 import Template
 from aio_pika.pool import Pool              
 import logging
 import json
+import datetime
 
 # The method that will run the relevant query from the db and send it to the Message Queue, the necessary information is transferred via parametric and os environment.
 async def perform_task(loop, sql_file_path=None, data_template_file_path=None, logger=None, config=None, consumer_pool_size=10, sql_fetch_size=1000):
@@ -179,7 +180,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
                                 for row in response:  
                                     try:                  
                                         # The fetched row is rendered and the resulting value is transferred to rendered_data.
-                                        rendered_data = await template.render_async(row, json=json)
+                                        rendered_data = await template.render_async(row, json=json, datetime=datetime)
                                         # print(rendered_data)
                                         # Sending rendered_data to RabbitMq
                                         await exchange.publish(aio_pika.Message(rendered_data.encode("utf-8")), routing_key= mq_routing_key,)                        
