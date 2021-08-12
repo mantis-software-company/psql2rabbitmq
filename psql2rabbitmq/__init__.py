@@ -146,64 +146,67 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
         
         # async with db_pool.acquire() as db_conn:
         #     async with db_conn.cursor(cursor_factory= psycopg2.extras.RealDictCursor) as cursor:
-        async with rabbitmq_channel_pool.acquire() as channel:
-                    
-            exchange = await channel.get_exchange(mq_exchange)
+        # async with rabbitmq_channel_pool.acquire() as channel:                    
+        #     exchange = await channel.get_exchange(mq_exchange)
 
-            while True:
-                try:                       
-                    # Retrieving data from database
-                    local_offset = sql_query_offset
-                    sql_query_offset += sql_fetch_size
-                    
-                    if "{{offset}}" in sql_query:
-                        sql_query_full = sql_query.replace("{{offset}}", str(local_offset))
-                    else:
-                        sql_query_full = sql_query + f" offset {local_offset}"
+        while True:
+            try:                       
+                # Retrieving data from database
+                local_offset = sql_query_offset
+                sql_query_offset += sql_fetch_size
+                
+                if "{{offset}}" in sql_query:
+                    sql_query_full = sql_query.replace("{{offset}}", str(local_offset))
+                else:
+                    sql_query_full = sql_query + f" offset {local_offset}"
 
-                    if "{{limit}}" in sql_query_full:
-                        sql_query_full = sql_query_full.replace("{{limit}}", str(sql_fetch_size))
-                    else:
-                        sql_query_full = sql_query_full + f" limit {sql_fetch_size}"
+                if "{{limit}}" in sql_query_full:
+                    sql_query_full = sql_query_full.replace("{{limit}}", str(sql_fetch_size))
+                else:
+                    sql_query_full = sql_query_full + f" limit {sql_fetch_size}"
 
-                    if logger:
-                        logger.debug(f"Method-{methodId} => offset: {local_offset} limit: {sql_fetch_size}")
-                    
-                    dsn = "host=%s user=%s password=%s dbname=%s port=%s" % (db_host, db_user, db_pass, db_database, db_port)
-                    async with aiopg.connect(dsn=dsn, timeout=1200) as db_conn:
-                        async with db_conn.cursor(cursor_factory= psycopg2.extras.RealDictCursor) as cursor:
+                if logger:
+                    logger.debug(f"Method-{methodId} => offset: {local_offset} limit: {sql_fetch_size}")
+                
+                dsn = "host=%s user=%s password=%s dbname=%s port=%s" % (db_host, db_user, db_pass, db_database, db_port)
+                async with aiopg.connect(dsn=dsn, timeout=1200) as db_conn:
+                    async with db_conn.cursor(cursor_factory= psycopg2.extras.RealDictCursor) as cursor:
 
-                            await cursor.execute(sql_query_full)
-                            response = await cursor.fetchall()
+                        await cursor.execute(sql_query_full)
+                        response = await cursor.fetchall()
+                        
+                        if cursor.rowcount != None and cursor.rowcount > 0:
+                            async with rabbitmq_channel_pool.acquire() as channel:                    
+                                exchange = await channel.get_exchange(mq_exchange)
 
-                            try:
-                                for row in response:  
-                                    try:                  
-                                        # The fetched row is rendered and the resulting value is transferred to rendered_data.
-                                        rendered_data = await template.render_async(row, json=json, datetime=datetime)
-                                        # print(rendered_data)
-                                        # Sending rendered_data to RabbitMq
-                                        await exchange.publish(aio_pika.Message(rendered_data.encode("utf-8")), routing_key= mq_routing_key,)                        
-                                    except Exception as e:
-                                        if logger:
-                                            logger.error("Row Send Error: {} -> {}".format(rendered_data, e))
-                            except Exception as e:
-                                if logger:
-                                    logger.error("Row Send Error: {} -> {}".format(rendered_data, e))
-                                
+                                try:
+                                    for row in response:  
+                                        try:                  
+                                            # The fetched row is rendered and the resulting value is transferred to rendered_data.
+                                            rendered_data = await template.render_async(row, json=json, datetime=datetime)
+                                            # print(rendered_data)
+                                            # Sending rendered_data to RabbitMq
+                                            await exchange.publish(aio_pika.Message(rendered_data.encode("utf-8")), routing_key= mq_routing_key,)                        
+                                        except Exception as e:
+                                            if logger:
+                                                logger.error("Row Send Error: {} -> {}".format(rendered_data, e))
+                                except Exception as e:
+                                    if logger:
+                                        logger.error("Row Send Error: {} -> {}".format(rendered_data, e))
+                            
+                        if logger:
+                                logger.debug(f"Method-{methodId} => row_count: {cursor.rowcount}")
+
+                        # If no data is received, the process is complete, and the loop is terminated.
+                        if cursor.rowcount == 0:
                             if logger:
-                                    logger.debug(f"Method-{methodId} => row_count: {cursor.rowcount}")
-
-                            # If no data is received, the process is complete, and the loop is terminated.
-                            if cursor.rowcount == 0:
-                                if logger:
-                                    logger.info(f"Method-{methodId} has finished.")
-                                break    
-        
-                except Exception as e:
-                    if logger:
-                        raise e
-                    break
+                                logger.info(f"Method-{methodId} has finished.")
+                            break    
+    
+            except Exception as e:
+                if logger:
+                    raise e
+                break
                 
     async with rabbitmq_connection_pool, rabbitmq_channel_pool:
         consumer_pool = []
