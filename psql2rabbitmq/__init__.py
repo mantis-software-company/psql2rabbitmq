@@ -237,7 +237,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
                                         # Sending rendered_data to RabbitMq
                                         await exchange.publish(aio_pika.Message(rendered_data.encode("utf-8")), routing_key= mq_routing_key,)
                                         if delete_after_query:
-                                            cursor.execute(delete_sql_query, (row.get(delete_record_column),))
+                                            await cursor.execute(delete_sql_query, (row.get(delete_record_column),))
                                     except Exception as e:
                                         if logger:
                                             logger.error("Row Send Error: {} -> {}".format(rendered_data, e))
