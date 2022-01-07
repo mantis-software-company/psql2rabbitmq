@@ -1,18 +1,18 @@
-import aio_pika  # pip install aio-pika
-import aiopg  # pip install aiopg
-import psycopg2  # pip install psycopg2
-import psycopg2.extras
-import jinja2  # pip install Jinja2
-import asyncio
-import os
-from jinja2 import Template
-from aio_pika.pool import Pool
 import logging
 import json
 import datetime
+import os
+import aio_pika
+import aiopg
+import psycopg2
+import psycopg2.extras
+import jinja2
+import asyncio
+from jinja2 import Template
+from aio_pika.pool import Pool
+from distutils.util import strtobool
 
 
-# The method that will run the relevant query from the db and send it to the Message Queue, the necessary information is transferred via parametric and os environment.
 async def perform_task(loop, sql_file_path=None, data_template_file_path=None, logger=None, config=None,
                        consumer_pool_size=10, sql_fetch_size=1000):
     # Configuration information is checked, if it is not sent parametrically, it is retrieved from within the os environment.
@@ -33,11 +33,32 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
             "sql_file_path": os.environ.get('SQL_FILE_PATH'),
             "data_template_file_path": os.environ.get('DATA_TEMPLATE_FILE_PATH'),
             "consumer_pool_size": os.environ.get('CONSUMER_POOL_SIZE'),
-            "sql_fetch_size": os.environ.get('SQL_FETCH_SIZE')
+            "sql_fetch_size": os.environ.get('SQL_FETCH_SIZE'),
+            "delete_after_query": strtobool(os.environ.get('DELETE_AFTER_QUERY', 'False')),
+            "delete_record_column": os.environ.get('DELETE_RECORD_COLUMN'),
+            "delete_sql_file_path": os.environ.get('DELETE_SQL_FILE_PATH')
         }
 
     logger.debug("Config:")
     logger.debug(config)
+
+    delete_after_query = config.get('delete_after_query')
+    delete_record_column = config.get('delete_record_column')
+    delete_sql_file_path = config.get('delete_sql_file_path')
+
+    if delete_after_query:
+        logger.info("!!! DELETE AFTER QUERY MODE IS ACTIVE !!!")
+        if delete_record_column is not None:
+            logger.debug(f"{'delete_record_column':<23} assigned to : {delete_record_column}")
+        else:
+            logger.error("Invalid delete_record_column")
+            return
+
+        if delete_sql_file_path is not None:
+            logger.debug(f"{'delete_sql_file_path':<23} assigned to : {delete_sql_file_path}")
+        else:
+            logger.error("Invalid delete_sql_file_path")
+            return
 
     sql_query = None
     # The data_template_file_path is checked, if it is not sent parametrically, it is taken from the configuration.
@@ -100,8 +121,12 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
                     "SQL_FETCH_SIZE in config is not available: {} -> {}".format(config.get("sql_fetch_size"), e))
 
     # Reading the file content in the directory given with sql_file_path.
-    sql_file = open(sql_file_path, "r")
-    sql_query = sql_file.read()
+    sql_query = open(sql_file_path, "r").read()
+
+    if delete_sql_file_path:
+        delete_sql_query = open(delete_sql_file_path, "r").read()
+    else:
+        delete_sql_query = None
 
     logger.debug("sql_query:")
     logger.debug(sql_query)
@@ -200,7 +225,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
                     await cursor.execute(sql_query_full)
                     response = await cursor.fetchall()
 
-                    if cursor.rowcount != None and cursor.rowcount > 0:
+                    if cursor.rowcount is not None and cursor.rowcount > 0:
                         async with rabbitmq_channel_pool.acquire() as channel:                    
                             exchange = await channel.get_exchange(mq_exchange)
 
@@ -209,9 +234,10 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
                                     try:                  
                                         # The fetched row is rendered and the resulting value is transferred to rendered_data.
                                         rendered_data = await template.render_async(row, json=json, datetime=datetime)
-                                        # print(rendered_data)
                                         # Sending rendered_data to RabbitMq
-                                        await exchange.publish(aio_pika.Message(rendered_data.encode("utf-8")), routing_key= mq_routing_key,)                        
+                                        await exchange.publish(aio_pika.Message(rendered_data.encode("utf-8")), routing_key= mq_routing_key,)
+                                        if delete_after_query:
+                                            cursor.execute(delete_sql_query, (row.get(delete_record_column),))
                                     except Exception as e:
                                         if logger:
                                             logger.error("Row Send Error: {} -> {}".format(rendered_data, e))
