@@ -170,7 +170,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
 
     async def sanitize_txt(txt):
         cc_regex = r"([\u0000-\u001F\u007F-\u009F\u2000-\u2011\u2028-\u202F\u205F-\u206F\u3000\uFEFF]+)"
-        return re.sub(cc_regex, "", txt, 0, re.UNICODE)
+        return re.sub(cc_regex, "", txt, 0, re.UNICODE).strip()
 
     async def apply_func(o, f):
         if isinstance(o, str):
@@ -252,7 +252,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
                                         # The fetched row is rendered and the resulting value is transferred to rendered_data.
                                         rendered_data = await template.render_async(row, json=json, datetime=datetime)
                                         # Sending rendered_data to RabbitMq
-                                        await exchange.publish(aio_pika.Message(rendered_data.encode("utf-8")), routing_key= mq_routing_key,)
+                                        await exchange.publish(aio_pika.Message(rendered_data.strip().encode("utf-8")), routing_key= mq_routing_key,)
                                         if delete_after_query:
                                             await cursor.execute(delete_sql_query, (row.get(delete_record_column),))
                                     except Exception as e:
