@@ -247,7 +247,7 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
                             try:
                                 for row in response:
                                     row = dict(row)
-                                    row = await apply_func(row, apply_func)
+                                    row = await apply_func(row, sanitize_txt)
                                     try:                  
                                         # The fetched row is rendered and the resulting value is transferred to rendered_data.
                                         rendered_data = await template.render_async(row, json=json, datetime=datetime)

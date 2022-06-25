@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="psql2rabbitmq",
-    version="1.0.6.2",
+    version="1.0.6.3",
     author="Umit YILMAZ",
     author_email="umutyilmaz44@gmail.com",
     description="Asynchronous PostgreSQL data read and publish to RabbitMQ library",
