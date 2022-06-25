@@ -1,16 +1,16 @@
-import logging
-import json
+import asyncio
 import datetime
+import json
 import os
+import re
+from distutils.util import strtobool
+
 import aio_pika
 import aiopg
 import psycopg2
 import psycopg2.extras
-import jinja2
-import asyncio
-from jinja2 import Template
 from aio_pika.pool import Pool
-from distutils.util import strtobool
+from jinja2 import Template
 
 
 async def perform_task(loop, sql_file_path=None, data_template_file_path=None, logger=None, config=None,
@@ -168,6 +168,21 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
     # The methods determine the next dataset over this shared variable. 
     sql_query_offset = 0
 
+    async def sanitize_txt(txt):
+        cc_regex = r"([\u0000-\u001F\u007F-\u009F\u2000-\u2011\u2028-\u202F\u205F-\u206F\u3000\uFEFF]+)"
+        return re.sub(cc_regex, "", txt, 0, re.UNICODE)
+
+    async def apply_func(o, f):
+        if isinstance(o, str):
+            o = await f(o)
+        elif isinstance(o, list):
+            o = [await apply_func(v, f) for v in o]
+        elif isinstance(o, dict):
+            for k, v in list(o.items()):
+                o.pop(k)
+                o[k] = await apply_func(v, f)
+        return o
+
     async def fetch_db_data(methodId):
 
         nonlocal sql_query_offset
@@ -230,7 +245,9 @@ async def perform_task(loop, sql_file_path=None, data_template_file_path=None, l
                             exchange = await channel.get_exchange(mq_exchange)
 
                             try:
-                                for row in response:  
+                                for row in response:
+                                    row = dict(row)
+                                    row = await apply_func(row, apply_func)
                                     try:                  
                                         # The fetched row is rendered and the resulting value is transferred to rendered_data.
                                         rendered_data = await template.render_async(row, json=json, datetime=datetime)
