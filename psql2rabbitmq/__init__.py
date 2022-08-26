@@ -9,6 +9,7 @@ import aio_pika
 import aiopg
 import psycopg2
 import psycopg2.extras
+from aio_pika import DeliveryMode
 from aio_pika.pool import Pool
 from jinja2 import Template
 
